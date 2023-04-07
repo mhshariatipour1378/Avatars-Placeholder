@@ -45,7 +45,7 @@ https://avatar.iran.liara.run/public?usearname=[value]
 
 ###### boy
 ```
-https://avatar.iran.liara.run/public?usearname=[value]
+https://avatar.iran.liara.run/public/boy?usearname=[value]
 ```
 *example: usearname=David*
 <br>
@@ -54,8 +54,7 @@ https://avatar.iran.liara.run/public?usearname=[value]
 
 ###### girl
 ```
-https://avatar.iran.liara.run/public?
-username=[value]
+https://avatar.iran.liara.run/public/girl?username=[value]
 ```
 *example: username=Angela*
 <br>
