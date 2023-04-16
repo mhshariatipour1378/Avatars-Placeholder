@@ -3,6 +3,7 @@
 ### API ###
 Read more guidance in the [Document](https://avatar-placeholder.iran.liara.run/).
 
+**Generate random user profile pictures to use as placeholders for your prototypes and design projects.**
 **To use the avatars in your project, use the following URLs:**
 
 #### 1) Random avatar
