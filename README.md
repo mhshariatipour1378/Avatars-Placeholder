@@ -1,7 +1,7 @@
 # Aavatar Placeholder #
 
 ### API ###
-Read more guidance in the document. [Multiavatar API](https://api.multiavatar.com).
+Read more guidance in the [Document](https://avatar-placeholder.iran.liara.run/).
 
 **To use the avatars in your project, use the following URLs:**
 
@@ -24,7 +24,7 @@ https://avatar.iran.liara.run/public/girl
 <img src="https://avatar.iran.liara.run/public/girl" width="65">
 
 #### 4) Unique avatar by id
-View the ID of the avatars: [Multiavatar API](https://api.multiavatar.com).
+View the ID of the avatars: [All avatars](https://avatar-placeholder.iran.liara.run/all)
 ```
 https://avatar.iran.liara.run/public/[ID]
 ```
@@ -38,7 +38,7 @@ https://avatar.iran.liara.run/public/[ID]
 ```
 https://avatar.iran.liara.run/public?usearname=[value]
 ```
-*example: usearname=Rya*
+*example: usearname=Jordan*
 <br>
 <br>
 <img src="https://avatar.iran.liara.run/public?username=Jordan" width="65">
@@ -47,7 +47,7 @@ https://avatar.iran.liara.run/public?usearname=[value]
 ```
 https://avatar.iran.liara.run/public/boy?usearname=[value]
 ```
-*example: usearname=David*
+*example: usearname=Scott*
 <br>
 <br>
 <img src="https://avatar.iran.liara.run/public/boy?username=Scott" width="65">
