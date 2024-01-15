@@ -25,7 +25,7 @@ https://avatar.iran.liara.run/public/girl
 <img src="https://avatar.iran.liara.run/public/girl" width="65">
 
 #### 4) Unique avatar by id
-View the ID of the avatars: [All avatars](https://avatar-placeholder.iran.liara.run/all)
+View the ID of the avatars: [All avatars](https://avatar-placeholder.iran.liara.run/avatars)
 ```
 https://avatar.iran.liara.run/public/[ID]
 ```
