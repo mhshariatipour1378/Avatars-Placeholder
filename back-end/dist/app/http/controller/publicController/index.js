@@ -122,6 +122,22 @@ class postController {
                     sendFile(path, { root: '.' });
             }
         };
+        //job avatrs
+        this.jobsList = process.env.JOBS_LIST ? process.env.JOBS_LIST.split(',') : [];
+        this.byJob = (req, res, next) => {
+            const job = req.params.job;
+            const gender = req.params.gender;
+            if (!this.jobsList.includes(job) || !['male', 'female'].includes(gender)) {
+                res.
+                    status(200).
+                    sendFile(this.get404Avatar(), { root: '.' });
+                return;
+            }
+            const path = `${process.env.UPLOAD_DIR}/job/${job}/${gender}${this.foramtFile}`;
+            res.
+                status(200).
+                sendFile(path, { root: '.' });
+        };
     }
 }
 exports.default = new postController();

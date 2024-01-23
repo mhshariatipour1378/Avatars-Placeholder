@@ -5,7 +5,6 @@ class postController{
     publicNameAvatar: string = process.env.AVATAR_PUBLIC_NAME ? process.env.AVATAR_PUBLIC_NAME : "";
     foramtFile:  string = process.env.AVATAR_FORAMT_FILE ? process.env.AVATAR_FORAMT_FILE : "";
 
-    
     index = (req: Request, res: Response, next: NextFunction) => {
 
         const startIndex: number = process.env.IMG_START_INDEX ? parseInt(process.env.IMG_START_INDEX ) : 0;
@@ -42,6 +41,17 @@ class postController{
             all: allAvatars,
             boy: boyAvatars,
             girl: girlAvatars,
+        });
+
+    }
+
+    getJobs = (req: Request, res: Response, next: NextFunction) => {
+        const jobsList: string[] = process.env.JOBS_LIST ? process.env.JOBS_LIST.split(',') : [];
+
+        res.
+        status(200).
+        json({
+            jobsList
         });
 
     }

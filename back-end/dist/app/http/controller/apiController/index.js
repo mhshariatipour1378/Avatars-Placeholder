@@ -34,6 +34,14 @@ class postController {
                 girl: girlAvatars,
             });
         };
+        this.getJobs = (req, res, next) => {
+            const jobsList = process.env.JOBS_LIST ? process.env.JOBS_LIST.split(',') : [];
+            res.
+                status(200).
+                json({
+                jobsList
+            });
+        };
     }
 }
 exports.default = new postController();

@@ -154,6 +154,29 @@ class postController{
 
     }
 
+    //job avatrs
+    jobsList: string[] = process.env.JOBS_LIST ? process.env.JOBS_LIST.split(',') : [];
+
+    byJob = (req: Request, res: Response, next: NextFunction) => {
+        
+        const job : string = req.params.job;
+        const gender: string = req.params.gender;
+
+        if(!this.jobsList.includes(job) || !['male', 'female'].includes(gender)){
+            res.
+            status(200).
+            sendFile(this.get404Avatar(), {root: '.'});
+            return;
+        }
+
+        const path: string = `${process.env.UPLOAD_DIR}/job/${job}/${gender}${this.foramtFile}`;
+
+        res.
+        status(200).
+        sendFile(path, {root: '.'});
+        
+     }
+
 }
 
-export default new postController();
+export default new postController(); 

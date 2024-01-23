@@ -15,6 +15,8 @@ router.get("/", publicController_1.default.index);
 //By Gender
 router.get("/boy", publicController_1.default.byGenderBoy);
 router.get("/girl", publicController_1.default.byGenderGirl);
+//By Job
+router.get("/job/:job/:gender", publicController_1.default.byJob);
 //By id
 router.get("/:id", publicController_1.default.byId);
 exports.default = router;

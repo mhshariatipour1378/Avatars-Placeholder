@@ -9,4 +9,5 @@ const router = express.Router();
 const apiController_1 = __importDefault(require("../../http/controller/apiController"));
 //Random
 router.get("/", apiController_1.default.index);
+router.get("/jobs", apiController_1.default.getJobs);
 exports.default = router;

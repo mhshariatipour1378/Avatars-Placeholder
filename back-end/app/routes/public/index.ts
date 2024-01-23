@@ -15,6 +15,9 @@ router.get("/", publicController.index)
 router.get("/boy", publicController.byGenderBoy)
 router.get("/girl", publicController.byGenderGirl)
 
+//By Job
+router.get("/job/:job/:gender", publicController.byJob)
+
 //By id
 router.get("/:id", publicController.byId)
 export default router;
