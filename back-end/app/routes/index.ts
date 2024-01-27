@@ -9,6 +9,10 @@ import publicController from "./../http/controller/publicController";
 import Public from "./public"
 router.use('/public', Public)
 
+//username
+import Username from "./username"
+router.use('/username', Username)
+
 //api
 import Api from "./api"
 router.use('/api', Api)

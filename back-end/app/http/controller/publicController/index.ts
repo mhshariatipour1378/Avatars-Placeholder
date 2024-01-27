@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
+const svg2img = require('svg2img');
 
-class postController{
+class publicController{
 
     publicNameAvatar: string = process.env.AVATAR_PUBLIC_NAME ? process.env.AVATAR_PUBLIC_NAME : "";
     foramtFile:  string = process.env.AVATAR_FORAMT_FILE ? process.env.AVATAR_FORAMT_FILE : "";
@@ -175,8 +176,125 @@ class postController{
         status(200).
         sendFile(path, {root: '.'});
         
-     }
+    }
+
+    //username
+    checkValidColor = (color:string) => {
+        var regex = /^([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
+        return regex.test(color);
+    }
+
+    svgAvatar = (req: Request, res: Response, next: NextFunction) => {
+
+        const defaultColorArray: object[] = [
+            {
+                color: '0B60B0',
+                background: '9dc9f2'
+            },
+            {
+                color: '6C22A6',
+                background: 'd7a3ff'
+            },
+            {
+                color: 'BF3131',
+                background: 'f09999'
+            },
+            {
+                color: '508D69',
+                background: 'a1d1b5'
+            }
+        ];
+
+        let defaultColor: object = defaultColorArray[Math.floor(Math.random() * 3)];
+        let format: string = 'png';
+        let username : string[]= [ String.fromCharCode(Math.random() * 26 + 65) , String.fromCharCode(Math.random() * 26 + 65)]; //Random
+
+        const size: number = req.query.size ? (Number(req.query.size) > 32 ? (Number(req.query.size) < 1024 ? Number(req.query.size) : 1024) : 32 ) : 256;
+        const uppercase: boolean = req.query.uppercase ? ( req.query.uppercase == "false" ? false : true ) : true;
+        const bold: boolean = req.query.bold ? ( req.query.bold == "false" ? false : true ) : true;
+        const length: number = req.query.length ? (Number(req.query.length) > 2 ? 2 : Number(req.query.length) ) : 2;
+        
+        //Username
+        if(req.query.username){
+            console.log("Username: ", req.query.username)
+            username = req.query.username.toString().split(' ');
+
+            if(username[0].length > 1){
+                username.push(username[0].charAt(1))
+            }else{
+                username.push("")
+            }
+
+            defaultColor = defaultColorArray[req.query.username.toString().length % 4];
+        }
+        
+        //Background
+        let backgroundColor: string = defaultColor.background;
+        if(req.query.background){
+            backgroundColor = this.checkValidColor(req.query.background.toString()) ? req.query.background.toString() : backgroundColor;
+        }
+
+        //Color
+        let fontColor: string = defaultColor.color;
+        if(req.query.color){
+            fontColor = this.checkValidColor(req.query.color.toString()) ? req.query.color.toString() : fontColor;
+        }
+
+        //Format
+        if(req.query.format){
+            format = ['png', 'jpg'].includes(req.query.format.toString()) ? req.query.format.toString() : 'png';
+        }
+        
+        //Uppercase
+        if(uppercase){
+            username.forEach((item, index)=>{
+                username[index] = item.toUpperCase()
+            })
+        }else{
+            username.forEach((item, index)=>{
+                username[index] = item.toLowerCase()
+            })
+        }
+
+        //length
+        if(length == 1){
+            username[1] = "";
+        }
+        
+        const svgContent = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 250 250">
+                <g id="icon" transform="translate(-177 -243)">
+                    <g id="Group_1" data-name="Group 1">
+                        <circle id="Ellipse_1" data-name="Ellipse 1" cx="125" cy="125" r="125" transform="translate(177 243)" fill="#${backgroundColor}"/>
+                    </g>
+                </g>
+                <text x="50%" y="54%" fill="#${fontColor}" font-size="110" dominant-baseline="middle" text-anchor="middle">${username[0]?.charAt(0) + username[1]?.charAt(0)}</text> 
+            </svg>
+        `;
+
+        // Convert SVG to Format
+        svg2img(svgContent, 
+            {
+                format,
+                resvg: {
+                    font: {
+                        fontFiles: [`./static/font/${ bold ? 'Roboto-Medium.ttf' : 'Roboto-Light.ttf'}`], 
+                        loadSystemFonts: false,
+                    },
+                }
+
+            }, (error: Error, buffer: Buffer)=> {
+                if (error) {
+                    res.status(500)
+                    .sendFile(this.get404Avatar(), {root: '.'});
+                } else {
+                    res.set('Content-Type', `image/${format}`);
+                    res.send(buffer);
+                }
+        });
+
+    }
 
 }
 
-export default new postController(); 
+export default new publicController(); 

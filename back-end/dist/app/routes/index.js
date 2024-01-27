@@ -10,6 +10,9 @@ const publicController_1 = __importDefault(require("./../http/controller/publicC
 //public
 const public_1 = __importDefault(require("./public"));
 router.use('/public', public_1.default);
+//username
+const username_1 = __importDefault(require("./username"));
+router.use('/username', username_1.default);
 //api
 const api_1 = __importDefault(require("./api"));
 router.use('/api', api_1.default);
