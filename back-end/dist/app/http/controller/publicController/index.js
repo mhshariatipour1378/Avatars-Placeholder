@@ -29,6 +29,7 @@ class publicController {
             return path;
         };
         this.index = (req, res, next) => {
+            var _a, _b;
             const startIndex = process.env.IMG_START_INDEX ? parseInt(process.env.IMG_START_INDEX) : 0;
             const endIndex = process.env.IMG_END_INDEX ? parseInt(process.env.IMG_END_INDEX) : 0;
             if (!startIndex || !endIndex || (startIndex > endIndex)) {
@@ -42,9 +43,12 @@ class publicController {
                 path = this.getImageByUsername(`${req.query.username}`, "id", startIndex, endIndex);
             }
             else {
+                if ((_a = req.headers) === null || _a === void 0 ? void 0 : _a.referer) {
+                    console.log("=> Refer:", (_b = req.headers) === null || _b === void 0 ? void 0 : _b.referer);
+                }
                 path = this.getImagePath("id", startIndex, endIndex);
             }
-            console.log(path);
+            //console.log(path)
             if (path) {
                 res.
                     status(200).
@@ -62,7 +66,7 @@ class publicController {
                 return;
             }
             if ((startIndex > idAvatar) || (idAvatar > endIndex)) {
-                console.log(this);
+                //console.log(this)
                 res.
                     status(200).
                     sendFile(this.get404Avatar(), { root: '.' });
@@ -70,7 +74,7 @@ class publicController {
             }
             const imageName = this.publicNameAvatar + idAvatar + this.foramtFile;
             const path = `${process.env.UPLOAD_DIR}/id/${imageName}`;
-            console.log(path);
+            //console.log(path)
             if (path) {
                 res.
                     status(200).
@@ -145,7 +149,10 @@ class publicController {
             return regex.test(color);
         };
         this.svgAvatar = (req, res, next) => {
-            var _a, _b;
+            var _a, _b, _c, _d;
+            if ((_a = req.headers) === null || _a === void 0 ? void 0 : _a.referer) {
+                console.log("=> Refer:", (_b = req.headers) === null || _b === void 0 ? void 0 : _b.referer);
+            }
             const defaultColorArray = [
                 {
                     color: '0B60B0',
@@ -219,7 +226,7 @@ class publicController {
                         <circle id="Ellipse_1" data-name="Ellipse 1" cx="125" cy="125" r="125" transform="translate(177 243)" fill="#${backgroundColor}"/>
                     </g>
                 </g>
-                <text x="50%" y="54%" fill="#${fontColor}" font-size="110" dominant-baseline="middle" text-anchor="middle">${((_a = username[0]) === null || _a === void 0 ? void 0 : _a.charAt(0)) + ((_b = username[1]) === null || _b === void 0 ? void 0 : _b.charAt(0))}</text> 
+                <text x="50%" y="54%" fill="#${fontColor}" font-size="110" dominant-baseline="middle" text-anchor="middle">${((_c = username[0]) === null || _c === void 0 ? void 0 : _c.charAt(0)) + ((_d = username[1]) === null || _d === void 0 ? void 0 : _d.charAt(0))}</text> 
             </svg>
         `;
             // Convert SVG to Format

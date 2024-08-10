@@ -21,8 +21,8 @@
     "html-entities": "^2.3.3",
     "jsonwebtoken": "^9.0.0",
     "nodemailer": "^6.9.1",
-    "nodemon": "^2.0.20",
-    "svg2img": "^1.0.0-beta.2"
+    "nodemon": "^3.1.4",
+    "svg2img": "^0.9.4"
   },
   "devDependencies": {
     "@types/express": "^4.17.17",

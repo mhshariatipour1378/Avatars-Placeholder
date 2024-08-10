@@ -52,10 +52,13 @@ class publicController{
         if(req.query.username){
             path = this.getImageByUsername(`${req.query.username}`, "id",startIndex, endIndex)
         }else{
+            if(req.headers?.referer){
+                console.log("=> Refer:", req.headers?.referer);
+            }
             path = this.getImagePath("id", startIndex, endIndex);
         }
 
-        console.log(path)
+        //console.log(path)
         if(path){
             res.
             status(200).
@@ -80,7 +83,7 @@ class publicController{
         }
 
         if( (startIndex > idAvatar) || (idAvatar > endIndex)){
-            console.log(this)
+            //console.log(this)
             res.
             status(200).
             sendFile(this.get404Avatar(), {root: '.'});
@@ -89,7 +92,7 @@ class publicController{
         
         const imageName: string = this.publicNameAvatar + idAvatar + this.foramtFile;
         const path: string = `${process.env.UPLOAD_DIR}/id/${imageName}`;
-        console.log(path)
+        //console.log(path)
         
         if(path){
             res.
@@ -185,6 +188,10 @@ class publicController{
     }
 
     svgAvatar = (req: Request, res: Response, next: NextFunction) => {
+
+        if(req.headers?.referer){
+            console.log("=> Refer:", req.headers?.referer);
+        }
 
         const defaultColorArray: object[] = [
             {
