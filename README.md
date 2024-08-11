@@ -63,7 +63,7 @@ https://avatar.iran.liara.run/public/girl?username=[value]
 <img src="https://avatar.iran.liara.run/public/girl?username=Angela" width="65">
 
 ### Avatars With Initials From Names
-Avatars initials, also known as profile pictures with initials, are typically the first letters of a user's name displayed within an avatar icon the ability to change the background color, text color, size, etc.
+Avatars initials, also known as profile pictures with initials, are typically the first letters of a user's name displayed within an avatar icon the ability to change the background color, text color, size, etc
 [(view all options)](https://avatar-placeholder.iran.liara.run/document/name/#more-option).
 ```
 https://avatar.iran.liara.run/username?username=[firstname+lastname]
