@@ -1,7 +1,5 @@
 # Aavatar Placeholder #
 
-### The site's servers have encountered problems, which will be solved soon. Thank you for being so patient. 😓😓 ###
-
 ### API ###
 Read more guidance in the [Document](https://avatar-placeholder.iran.liara.run/).
 
