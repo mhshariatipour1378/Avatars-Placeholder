@@ -38,31 +38,38 @@ class publicController{
 
     index = (req: Request, res: Response, next: NextFunction) => {
 
-        const startIndex: number = process.env.IMG_START_INDEX ? parseInt(process.env.IMG_START_INDEX ) : 0;
-        const endIndex: number = process.env.IMG_END_INDEX ? parseInt(process.env.IMG_END_INDEX ) : 0;
-     
-        if(!startIndex || !endIndex || (startIndex > endIndex)){
+        try{
+            const startIndex: number = process.env.IMG_START_INDEX ? parseInt(process.env.IMG_START_INDEX ) : 0;
+            const endIndex: number = process.env.IMG_END_INDEX ? parseInt(process.env.IMG_END_INDEX ) : 0;
+
+            if(!startIndex || !endIndex || (startIndex > endIndex)){
+                res.
+                status(200).
+                sendFile(this.get404Avatar(), {root: '.'});
+                return;
+            }
+
+            let path = null;
+            if(req.query.username){
+                path = this.getImageByUsername(`${req.query.username}`, "id",startIndex, endIndex)
+            }else{
+                if(req.headers?.referer){
+                    console.log("=> Refer:", req.headers?.referer);
+                }
+                path = this.getImagePath("id", startIndex, endIndex);
+            }
+
+            //console.log(path)
+            if(path){
+                res.
+                status(200).
+                sendFile(path, {root: '.'});
+            }
+
+        }catch(err){
             res.
             status(200).
             sendFile(this.get404Avatar(), {root: '.'});
-            return;
-        }
-
-        let path = null;
-        if(req.query.username){
-            path = this.getImageByUsername(`${req.query.username}`, "id",startIndex, endIndex)
-        }else{
-            if(req.headers?.referer){
-                console.log("=> Refer:", req.headers?.referer);
-            }
-            path = this.getImagePath("id", startIndex, endIndex);
-        }
-
-        //console.log(path)
-        if(path){
-            res.
-            status(200).
-            sendFile(path, {root: '.'});
         }
 
     }
@@ -236,12 +243,14 @@ class publicController{
         }
         
         //Background
+        // @ts-ignore
         let backgroundColor: string = defaultColor.background;
         if(req.query.background){
             backgroundColor = this.checkValidColor(req.query.background.toString()) ? req.query.background.toString() : backgroundColor;
         }
 
         //Color
+        // @ts-ignore
         let fontColor: string = defaultColor.color;
         if(req.query.color){
             fontColor = this.checkValidColor(req.query.color.toString()) ? req.query.color.toString() : fontColor;

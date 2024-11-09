@@ -30,29 +30,36 @@ class publicController {
         };
         this.index = (req, res, next) => {
             var _a, _b;
-            const startIndex = process.env.IMG_START_INDEX ? parseInt(process.env.IMG_START_INDEX) : 0;
-            const endIndex = process.env.IMG_END_INDEX ? parseInt(process.env.IMG_END_INDEX) : 0;
-            if (!startIndex || !endIndex || (startIndex > endIndex)) {
+            try {
+                const startIndex = process.env.IMG_START_INDEX ? parseInt(process.env.IMG_START_INDEX) : 0;
+                const endIndex = process.env.IMG_END_INDEX ? parseInt(process.env.IMG_END_INDEX) : 0;
+                if (!startIndex || !endIndex || (startIndex > endIndex)) {
+                    res.
+                        status(200).
+                        sendFile(this.get404Avatar(), { root: '.' });
+                    return;
+                }
+                let path = null;
+                if (req.query.username) {
+                    path = this.getImageByUsername(`${req.query.username}`, "id", startIndex, endIndex);
+                }
+                else {
+                    if ((_a = req.headers) === null || _a === void 0 ? void 0 : _a.referer) {
+                        console.log("=> Refer:", (_b = req.headers) === null || _b === void 0 ? void 0 : _b.referer);
+                    }
+                    path = this.getImagePath("id", startIndex, endIndex);
+                }
+                //console.log(path)
+                if (path) {
+                    res.
+                        status(200).
+                        sendFile(path, { root: '.' });
+                }
+            }
+            catch (err) {
                 res.
                     status(200).
                     sendFile(this.get404Avatar(), { root: '.' });
-                return;
-            }
-            let path = null;
-            if (req.query.username) {
-                path = this.getImageByUsername(`${req.query.username}`, "id", startIndex, endIndex);
-            }
-            else {
-                if ((_a = req.headers) === null || _a === void 0 ? void 0 : _a.referer) {
-                    console.log("=> Refer:", (_b = req.headers) === null || _b === void 0 ? void 0 : _b.referer);
-                }
-                path = this.getImagePath("id", startIndex, endIndex);
-            }
-            //console.log(path)
-            if (path) {
-                res.
-                    status(200).
-                    sendFile(path, { root: '.' });
             }
         };
         this.byId = (req, res, next) => {
@@ -191,11 +198,13 @@ class publicController {
                 defaultColor = defaultColorArray[req.query.username.toString().length % 4];
             }
             //Background
+            // @ts-ignore
             let backgroundColor = defaultColor.background;
             if (req.query.background) {
                 backgroundColor = this.checkValidColor(req.query.background.toString()) ? req.query.background.toString() : backgroundColor;
             }
             //Color
+            // @ts-ignore
             let fontColor = defaultColor.color;
             if (req.query.color) {
                 fontColor = this.checkValidColor(req.query.color.toString()) ? req.query.color.toString() : fontColor;
