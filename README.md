@@ -1,4 +1,4 @@
-# Aavatar Placeholder #
+# Avatar Placeholder #
 
 ### API ###
 Read more guidance in the [Document](https://avatar-placeholder.iran.liara.run/).
