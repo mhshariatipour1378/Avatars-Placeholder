@@ -75,5 +75,5 @@ https://avatar.iran.liara.run/username?username=[firstname+lastname]
 
 <hr/>
 
-### [Support API](https://avatar-placeholder.iran.liara.run/document/name/#more-option) ###
+### [Support API](https://avatar-placeholder.iran.liara.run/donate) ###
 your support ensures our API’s long and happy life. Devs and businesses relying on it will thank you. Thanks for being part of our digital adventure! 😊
