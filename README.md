@@ -73,3 +73,7 @@ https://avatar.iran.liara.run/username?username=[firstname+lastname]
 <br>
 <img src="https://avatar.iran.liara.run/username?username=Scott+Wilson" width="65">
 
+<hr/>
+
+### [Support API](https://avatar-placeholder.iran.liara.run/document/name/#more-option) ###
+your support ensures our API’s long and happy life. Devs and businesses relying on it will thank you. Thanks for being part of our digital adventure! 😊
