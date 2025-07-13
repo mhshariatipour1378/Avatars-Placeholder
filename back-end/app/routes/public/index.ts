@@ -18,6 +18,10 @@ router.get("/girl", publicController.byGenderGirl)
 //By Job
 router.get("/job/:job/:gender", publicController.byJob)
 
-//By id
+//Test cache endpoint
+router.get("/test/cache", publicController.testCache)
+
+//By id (must be last to avoid catching other routes)
 router.get("/:id", publicController.byId)
+
 export default router; 

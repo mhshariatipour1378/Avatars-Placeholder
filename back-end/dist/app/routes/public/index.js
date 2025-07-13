@@ -17,6 +17,8 @@ router.get("/boy", publicController_1.default.byGenderBoy);
 router.get("/girl", publicController_1.default.byGenderGirl);
 //By Job
 router.get("/job/:job/:gender", publicController_1.default.byJob);
-//By id
+//Test cache endpoint
+router.get("/test/cache", publicController_1.default.testCache);
+//By id (must be last to avoid catching other routes)
 router.get("/:id", publicController_1.default.byId);
 exports.default = router;

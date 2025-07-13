@@ -1,0 +1,58 @@
+# Development Dockerfile with hot reload and performance monitoring
+FROM node:18-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Install dependencies including build tools for canvas and performance monitoring
+RUN apk add --no-cache \
+    libc6-compat \
+    python3 \
+    make \
+    g++ \
+    jpeg-dev \
+    cairo-dev \
+    giflib-dev \
+    pango-dev \
+    libtool \
+    autoconf \
+    automake \
+    pkgconfig \
+    pixman-dev \
+    build-base \
+    cairo \
+    jpeg \
+    giflib \
+    pango \
+    pixman \
+    # Performance monitoring tools
+    procps \
+    htop \
+    # Compression libraries
+    zlib \
+    zlib-dev \
+    # Network monitoring
+    curl \
+    # Process monitoring
+    psutils
+
+# Copy package files
+COPY back-end/package*.json ./
+
+# Install all dependencies (including dev dependencies)
+RUN npm install
+
+# Copy source code
+COPY back-end/ ./
+
+# Create cache directories
+RUN mkdir -p /app/cache
+
+# Compile TypeScript
+RUN npm run build
+
+# Expose port
+EXPOSE 3000
+
+# Start development server with nodemon and performance monitoring
+CMD ["npm", "start"] 

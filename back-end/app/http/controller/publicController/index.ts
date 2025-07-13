@@ -1,19 +1,91 @@
 import { Request, Response, NextFunction } from 'express';
 const svg2img = require('svg2img');
+import cacheService from '../../../services/cacheService';
+import fs from 'fs';
+import path from 'path';
 
 class publicController{
 
     publicNameAvatar: string = process.env.AVATAR_PUBLIC_NAME ? process.env.AVATAR_PUBLIC_NAME : "";
     foramtFile:  string = process.env.AVATAR_FORAMT_FILE ? process.env.AVATAR_FORAMT_FILE : "";
 
+    // Helper function to set cache headers based on user preferences
+    setCacheHeaders = (req: Request, res: Response, defaultMaxAge: number = 3600, isCacheHit: boolean = false, filePath?: string) => {
+        // Check for cache control query parameters
+        const noCache = req.query.no_cache === 'true' || req.query.nocache === 'true';
+        const maxAge = req.query.max_age ? parseInt(req.query.max_age.toString()) : defaultMaxAge;
+        const cdn = req.query.cdn === 'true' || req.headers['x-cdn-enabled'] === 'true';
+        
+        // Set cache status header
+        res.setHeader('X-Cache-Status', isCacheHit ? 'HIT' : 'MISS');
+        
+        if (noCache) {
+            // Disable caching
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.setHeader('Pragma', 'no-cache');
+            res.setHeader('Expires', '0');
+            res.setHeader('X-Cache-Control', 'disabled');
+        } else if (cdn) {
+            // CDN-friendly caching
+            res.setHeader('Cache-Control', `public, max-age=${maxAge}, s-maxage=${maxAge * 2}`);
+            res.setHeader('CDN-Cache-Control', `max-age=${maxAge * 2}`);
+            res.setHeader('X-Cache-Control', 'cdn-enabled');
+        } else {
+            // Standard caching
+            res.setHeader('Cache-Control', `public, max-age=${maxAge}`);
+            res.setHeader('X-Cache-Control', 'enabled');
+        }
+        
+        // Generate consistent ETag based on file metadata or request parameters
+        let etag: string;
+        if (filePath && fs.existsSync(filePath)) {
+            // For file-based requests, use file modification time and size
+            const stats = fs.statSync(filePath);
+            etag = `"${stats.mtime.getTime()}-${stats.size}"`;
+        } else if (req.params.id) {
+            // For specific ID requests, use the ID as part of ETag
+            etag = `"${req.params.id}-${Date.now()}"`;
+        } else if (req.query.username) {
+            // For username-based requests, use username hash
+            const usernameHash = req.query.username.toString().split('').reduce((a: number, b: string) => a + b.charCodeAt(0), 0);
+            etag = `"username-${usernameHash}"`;
+        } else {
+            // For random requests, use a timestamp-based ETag (less optimal but still consistent)
+            etag = `"random-${Math.floor(Date.now() / 60000)}"`; // Changes every minute
+        }
+        
+        res.setHeader('ETag', etag);
+        
+        // Check if client has a valid cached version
+        const ifNoneMatch = req.headers['if-none-match'];
+        if (ifNoneMatch === etag) {
+            res.status(304).end();
+            return true; // Indicate that response was sent
+        }
+        
+        return false; // Continue with normal response
+    };
+
     //helper function
     getImagePath = (folderName: string, startIndex: number, endIndex: number) => {
+        // Check cache first
+        const cacheKey = cacheService.generatePathKey(folderName, startIndex, endIndex);
+        const cachedPath = cacheService.getPath(cacheKey);
+        
+        if (cachedPath) {
+            return { path: cachedPath, isCacheHit: true };
+        }
+
         //Generate Random
         const randomIndex: number = Math.floor(Math.random() * ((endIndex + 1) - startIndex)) + startIndex;
         
         const imageName: string = this.publicNameAvatar + randomIndex + this.foramtFile;
         const path: string = `${process.env.UPLOAD_DIR}/${folderName}/${imageName}`;
-        return path;
+        
+        // Cache the path
+        cacheService.setPath(cacheKey, path);
+        
+        return { path, isCacheHit: false };
     }
 
     get404Avatar = ()=>{
@@ -22,6 +94,14 @@ class publicController{
     }
 
     getImageByUsername = (username: string, folderName: string, startIndex: number, endIndex: number)=>{
+
+        // Check cache first
+        const cacheKey = cacheService.generatePathKey(folderName, startIndex, endIndex, username);
+        const cachedPath = cacheService.getPath(cacheKey);
+        
+        if (cachedPath) {
+            return { path: cachedPath, isCacheHit: true };
+        }
 
         //username convert to number value
         let usernameValue: number = 0;
@@ -33,7 +113,10 @@ class publicController{
         const imageName: string = this.publicNameAvatar + idAvatar + this.foramtFile;
         const path: string = `${process.env.UPLOAD_DIR}/${folderName}/${imageName}`;
         
-        return path;
+        // Cache the path
+        cacheService.setPath(cacheKey, path);
+        
+        return { path, isCacheHit: false };
     }
 
     index = (req: Request, res: Response, next: NextFunction) => {
@@ -49,21 +132,24 @@ class publicController{
                 return;
             }
 
-            let path = null;
+            let pathResult = null;
             if(req.query.username){
-                path = this.getImageByUsername(`${req.query.username}`, "id",startIndex, endIndex)
+                pathResult = this.getImageByUsername(`${req.query.username}`, "id",startIndex, endIndex)
             }else{
                 if(req.headers?.referer){
                     console.log("=> Refer:", req.headers?.referer);
                 }
-                path = this.getImagePath("id", startIndex, endIndex);
+                pathResult = this.getImagePath("id", startIndex, endIndex);
             }
 
-            //console.log(path)
-            if(path){
+            if(pathResult && pathResult.path){
+                // Set cache headers based on user preferences
+                const responseSent = this.setCacheHeaders(req, res, 3600, pathResult.isCacheHit, pathResult.path); // 1 hour default
+                if (responseSent) return;
+                
                 res.
                 status(200).
-                sendFile(path, {root: '.'});
+                sendFile(pathResult.path, {root: '.'});
             }
 
         }catch(err){
@@ -74,118 +160,99 @@ class publicController{
 
     }
 
+    // --- Add this method for robust cache-enabled image streaming ---
+    sendImageWithCache = (
+        req: Request,
+        res: Response,
+        filePath: string,
+        cacheOptions: { maxAge: number; isCacheHit: boolean }
+    ) => {
+        res.setHeader('X-Debug-Handler', 'streaming'); // DEBUG HEADER
+        if (!fs.existsSync(filePath)) {
+            res.status(404).json({ error: 'File not found' });
+            return;
+        }
+        
+        // Use setCacheHeaders to respect query parameters (no_cache, cdn, max_age)
+        const responseSent = this.setCacheHeaders(req, res, cacheOptions.maxAge, cacheOptions.isCacheHit, filePath);
+        if (responseSent) return;
+        
+        // Detect content type
+        let contentType = 'image/png';
+        if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) contentType = 'image/jpeg';
+        else if (filePath.endsWith('.gif')) contentType = 'image/gif';
+        else if (filePath.endsWith('.svg')) contentType = 'image/svg+xml';
+        res.setHeader('Content-Type', contentType);
+        
+        const stream = fs.createReadStream(filePath);
+        stream.pipe(res);
+    }
+
     byId = (req: Request, res: Response, next: NextFunction) => {
-
         const idAvatar:number = parseInt(req.params.id);
-
         const startIndex: number = process.env.IMG_START_INDEX ? parseInt(process.env.IMG_START_INDEX ) : 0;
         const endIndex: number = process.env.IMG_END_INDEX ? parseInt(process.env.IMG_END_INDEX ) : 0;
-     
         if(!startIndex || !endIndex || !idAvatar || (startIndex > endIndex)){
-            res.
-            status(200).
-            sendFile(this.get404Avatar(), {root: '.'});
-            
+            res.status(200).sendFile(this.get404Avatar(), {root: '.'});
             return;
         }
-
         if( (startIndex > idAvatar) || (idAvatar > endIndex)){
-            //console.log(this)
-            res.
-            status(200).
-            sendFile(this.get404Avatar(), {root: '.'});
+            res.status(200).sendFile(this.get404Avatar(), {root: '.'});
             return;
         }
-        
         const imageName: string = this.publicNameAvatar + idAvatar + this.foramtFile;
-        const path: string = `${process.env.UPLOAD_DIR}/id/${imageName}`;
-        //console.log(path)
-        
-        if(path){
-            res.
-            status(200).
-            sendFile(path, {root: '.'});
-        }
-
+        const filePath: string = `${process.env.UPLOAD_DIR}/id/${imageName}`;
+        this.sendImageWithCache(req, res, filePath, { maxAge: 86400, isCacheHit: true });
     }
 
     byGenderBoy = (req: Request, res: Response, next: NextFunction)=> {
-        
         const startIndex: number = process.env.IMG_BOY_START_INDEX ? parseInt(process.env.IMG_BOY_START_INDEX) : 0;
         const endIndex: number = process.env.IMG_BOY_END_INDEX ? parseInt(process.env.IMG_BOY_END_INDEX) : 0;
-    
         if(!startIndex || !endIndex || (startIndex > endIndex)){
-            res.
-            status(200).
-            sendFile(this.get404Avatar(), {root: '.'});
+            res.status(200).sendFile(this.get404Avatar(), {root: '.'});
             return;
         }
-        
-        let path = null;
+        let pathResult = null;
         if(req.query.username){
-            path = this.getImageByUsername(`${req.query.username}`, "id",startIndex, endIndex)
+            pathResult = this.getImageByUsername(`${req.query.username}`, "id",startIndex, endIndex)
         }else{
-            path = this.getImagePath("boy", startIndex, endIndex);
+            pathResult = this.getImagePath("boy", startIndex, endIndex);
         }
-
-        //console.log(path)
-        if(path){
-            res.
-            status(200).
-            sendFile(path, {root: '.'});
+        if(pathResult && pathResult.path){
+            this.sendImageWithCache(req, res, pathResult.path, { maxAge: 3600, isCacheHit: pathResult.isCacheHit });
         }
-        
     }
 
     byGenderGirl = (req: Request, res: Response, next: NextFunction) => {
-        
         const startIndex: number = process.env.IMG_GIRL_START_INDEX ? parseInt(process.env.IMG_GIRL_START_INDEX) : 0;
         const endIndex: number = process.env.IMG_GIRL_END_INDEX ? parseInt(process.env.IMG_GIRL_END_INDEX) : 0;
-        
         if(!startIndex || !endIndex || (startIndex > endIndex)){
-            res.
-            status(200).
-            sendFile(this.get404Avatar(), {root: '.'});
+            res.status(200).sendFile(this.get404Avatar(), {root: '.'});
             return;
         }
-        
-        let path = null;
+        let pathResult = null;
         if(req.query.username){
-            path = this.getImageByUsername(`${req.query.username}`, "id",startIndex, endIndex)
+            pathResult = this.getImageByUsername(`${req.query.username}`, "id",startIndex, endIndex)
         }else{
-            path = this.getImagePath("girl", startIndex, endIndex);
+            pathResult = this.getImagePath("girl", startIndex, endIndex);
         }
-
-        //console.log(path)
-        if(path){
-            res.
-            status(200).
-            sendFile(path, {root: '.'});
+        if(pathResult && pathResult.path){
+            this.sendImageWithCache(req, res, pathResult.path, { maxAge: 3600, isCacheHit: pathResult.isCacheHit });
         }
-
     }
 
     //job avatrs
     jobsList: string[] = process.env.JOBS_LIST ? process.env.JOBS_LIST.split(',') : [];
 
     byJob = (req: Request, res: Response, next: NextFunction) => {
-        
         const job : string = req.params.job;
         const gender: string = req.params.gender;
-
         if(!this.jobsList.includes(job) || !['male', 'female'].includes(gender)){
-            res.
-            status(200).
-            sendFile(this.get404Avatar(), {root: '.'});
+            res.status(200).sendFile(this.get404Avatar(), {root: '.'});
             return;
         }
-
-        const path: string = `${process.env.UPLOAD_DIR}/job/${job}/${gender}${this.foramtFile}`;
-
-        res.
-        status(200).
-        sendFile(path, {root: '.'});
-        
+        const filePath: string = `${process.env.UPLOAD_DIR}/job/${job}/${gender}${this.foramtFile}`;
+        this.sendImageWithCache(req, res, filePath, { maxAge: 86400, isCacheHit: true });
     }
 
     //username
@@ -276,6 +343,31 @@ class publicController{
         if(length == 1){
             username[1] = "";
         }
+
+        // Generate cache key
+        const cacheKey = cacheService.generateSvgKey({
+            username: req.query.username?.toString(),
+            size,
+            format,
+            backgroundColor,
+            fontColor,
+            uppercase,
+            bold,
+            length
+        });
+
+        // Check cache first
+        const cachedBuffer = cacheService.getSvgAvatar(cacheKey);
+        if (cachedBuffer) {
+            res.set('Content-Type', `image/${format}`);
+            
+            // Set cache headers for SVG avatars
+            const responseSent = this.setCacheHeaders(req, res, 86400, true, undefined); // 24 hours default, cache hit
+            if (responseSent) return;
+            
+            res.send(cachedBuffer);
+            return;
+        }
         
         const svgContent = `
             <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 250 250">
@@ -304,11 +396,33 @@ class publicController{
                     res.status(500)
                     .sendFile(this.get404Avatar(), {root: '.'});
                 } else {
+                    // Cache the generated image
+                    cacheService.setSvgAvatar(cacheKey, buffer);
+                    
                     res.set('Content-Type', `image/${format}`);
+                    
+                    // Set cache headers for SVG avatars
+                    const responseSent = this.setCacheHeaders(req, res, 86400, false, undefined); // 24 hours default, cache miss
+                    if (responseSent) return;
+                    
                     res.send(buffer);
                 }
         });
 
+    }
+
+    // Test endpoint for cache functionality
+    testCache = (req: Request, res: Response, next: NextFunction) => {
+        // Set cache headers
+        const responseSent = this.setCacheHeaders(req, res, 3600, true, undefined);
+        if (responseSent) return;
+        
+        // Send a simple JSON response
+        res.json({
+            message: "Cache test endpoint",
+            timestamp: new Date().toISOString(),
+            cacheStatus: "HIT"
+        });
     }
 
 }
